@@ -1,0 +1,24 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadHorizonToken",
+      "Effect": "Allow",
+      "Action": ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"],
+      "Resource": "arn:aws:secretsmanager:<region>:<aws-account-id>:secret:group-lakehouse/horizon-token-*"
+    },
+    {
+      "Sid": "ReadOnlyTheSharePrefix",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:GetObjectVersion"],
+      "Resource": "arn:aws:s3:::<your-bucket>/lakehouse/share_aws/*"
+    },
+    {
+      "Sid": "ListOnlyTheSharePrefix",
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket", "s3:GetBucketLocation"],
+      "Resource": "arn:aws:s3:::<your-bucket>",
+      "Condition": { "StringLike": { "s3:prefix": ["lakehouse/share_aws/*"] } }
+    }
+  ]
+}

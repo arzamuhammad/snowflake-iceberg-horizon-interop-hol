@@ -1,0 +1,126 @@
+{
+  "name": "group_open_lakehouse_horizon",
+  "title": "Group Open Lakehouse: Snowflake-Managed Iceberg + Horizon Catalog on AWS",
+  "tagline": "Better Data. Faster Answers.",
+  "column_widths": [180, 182, 590, 318],
+  "legend": [{"type": "batch", "label": "Batch"}, {"type": "stream", "label": "Streaming"}, {"type": "share", "label": "Open access (Iceberg REST)"}],
+  "columns": [
+    {"panels": [
+      {"id": "p1", "num": 1, "title": "Data Sources",
+       "narrative": "The subsidiary's operational data comes from relational databases, SaaS applications, files landing in its own Amazon S3 buckets and event streams from digital channels. These systems do not change; each is connected through the ingestion pattern that matches its latency and volume.",
+       "components": [["Operational Databases", "Oracle, MySQL, PostgreSQL systems of record (batch or CDC)."], ["SaaS Applications", "CRM / ERP APIs extracted on a schedule."], ["Files on Amazon S3", "CSV, JSON and Parquet drops in the subsidiary's landing bucket."], ["Events / Clickstream", "App and device events published to Kafka / Amazon MSK."]],
+       "cards": [
+        {"id": "c_db", "title": "Databases", "items": [{"icon": "logo:oracle", "label": "ORACLE"}, {"icon": "logo:mysql", "label": "MySQL"}, {"icon": "logo:postgresql", "label": "PostgreSQL", "size": 30}]},
+        {"id": "c_saas", "title": "SaaS Apps", "items": [{"icon": "logo:salesforce", "label": "CRM / ERP", "size": 36}]},
+        {"id": "c_files", "title": "Files (Landing Zone)", "items": [{"icon": "aws:Simple-Storage-Service", "label": "Amazon S3", "size": 32}]},
+        {"id": "c_iot", "title": "Events / Clickstream", "items": [{"icon": "snowflake:IoT", "label": "Apps & Devices", "size": 32}]}
+       ]}
+    ]},
+    {"panels": [
+      {"id": "p2", "num": 2, "title": "Ingestion",
+       "narrative": "**Amazon MWAA (Apache Airflow)** is the single orchestrator. In the **batch lane** (blue) Airflow DAGs trigger Snowpipe / COPY INTO loads from the S3 landing zone into Bronze, then run `EXECUTE DBT PROJECT` so the dbt models execute natively inside Snowflake. In the **streaming lane** (orange) events from Kafka / Amazon MSK are written with Snowpipe Streaming directly into Bronze Iceberg tables within seconds.",
+       "components": [["Amazon MWAA (Apache Airflow)", "Schedules loads and triggers dbt Projects on Snowflake via the Snowflake provider."], ["Snowpipe / COPY INTO", "Serverless or scheduled file loading from the S3 landing zone into Bronze."], ["dbt trigger", "Airflow task runs EXECUTE DBT PROJECT; no dbt runtime to host in MWAA."], ["Kafka / Amazon MSK", "Event backbone for real-time feeds."], ["Snowpipe Streaming", "Row-level, low-latency ingestion into Iceberg tables."]],
+       "groups": [
+        {"id": "g_batch", "title": "Batch Ingestion", "color": "blue", "items": [
+          {"icon": "aws:Managed-Workflows-for-Apache-Airflow", "label": "Amazon MWAA", "sub": "(Apache Airflow)"},
+          {"icon": "snowflake:Snowflake_ICON_RA_Pipe", "label": "Snowpipe"},
+          {"icon": "snowflake:Snowflake_ICON_Simplify_Pipelines", "label": "COPY INTO"},
+          {"icon": "logo:dbt", "label": "dbt trigger", "sub": "EXECUTE DBT PROJECT"}]},
+        {"id": "g_stream", "title": "Real-Time Streaming", "color": "orange", "items": [
+          {"icon": "logo:apachekafka", "label": "Apache Kafka"},
+          {"icon": "aws:Managed-Streaming-for-Apache-Kafka", "label": "Amazon MSK"},
+          {"icon": "snowflake:Snowflake_ICON_RA_Stream", "label": "Snowpipe Streaming"}]}
+       ]}
+    ]},
+    {"type": "platform", "id": "platform", "title": "SNOWFLAKE AI DATA CLOUD",
+     "sections": [
+      {"id": "s3", "num": 3, "title": "Transformation", "type": "cards", "widths": ["1.3fr", "1fr", "1fr"],
+       "narrative": "All transformation runs inside Snowflake compute. **dbt Projects on Snowflake** hold the version-controlled Bronze→Silver→Gold models and tests; MWAA only triggers them. Snowflake Tasks and Snowpark cover procedural logic, and **Dynamic Tables** keep near real-time aggregates fresh. Because the target tables are Snowflake-managed Iceberg tables, every write produces open Iceberg data + metadata files in the customer's S3 bucket.",
+       "components": [["dbt Projects on Snowflake", "Modular, tested SQL models deployed as a native DBT PROJECT object."], ["Tasks / Snowpark / SQL", "Procedural and Python transformations on virtual warehouses."], ["Dynamic Tables", "Declarative incremental pipelines with a target lag (also as Dynamic Iceberg Tables)."]],
+       "cards": [
+        {"id": "c_dbt", "layout": "center", "items": [{"icon": "logo:dbt", "label": "dbt Projects\non Snowflake", "size": 34}]},
+        {"id": "c_batch", "title": "Batch", "layout": "rows", "items": [
+          {"icon": "snowflake:RA_Task", "label": "Tasks", "size": 22},
+          {"icon": "snowflake:Snowpark", "label": "Snowpark / SQL", "size": 22}]},
+        {"id": "c_dt", "title": "Near Real-Time", "layout": "center", "items": [{"icon": "snowflake:Dynamic_Tables", "label": "Dynamic Tables", "size": 30}]}
+       ]},
+      {"id": "s4", "num": 4, "title": "Medallion on Snowflake-Managed Iceberg", "type": "medallion",
+       "narrative": "Every layer is a **Snowflake-managed Apache Iceberg table** (`CATALOG = 'SNOWFLAKE'`): Snowflake is the catalog through **Horizon**, and the Parquet data plus Iceberg metadata live in the customer's own **Amazon S3** bucket through an External Volume. Snowflake handles commits, compaction and snapshot expiry. **Bronze** is raw and append-only, **Silver** is cleansed and conformed, **Gold** is business-ready. Silver and Gold are the layers published to the group.",
+       "components": [["Bronze", "Raw, replayable data (Snowflake-managed Iceberg)."], ["Silver", "Cleansed, conformed entities — shared with the group."], ["Gold", "Business-ready data products — shared with the group."], ["External Volume: customer S3", "Customer-owned open storage; Snowflake vends scoped credentials to readers."]],
+       "tiers": [
+        {"id": "t_bronze", "name": "BRONZE", "sub": "Raw Data", "note": "(Snowflake-managed Iceberg)", "color": "bronze", "badge": {"icon": "snowflake:Snowflake_ICON_Iceberg_Tables", "label": "Apache Iceberg", "size": 22}},
+        {"id": "t_silver", "name": "SILVER", "sub": "Cleansed & Conformed", "note": "(Snowflake-managed Iceberg)", "color": "silver", "badge": {"icon": "snowflake:Snowflake_ICON_Iceberg_Tables", "label": "Apache Iceberg", "size": 22}},
+        {"id": "t_gold", "name": "GOLD", "sub": "Business-Ready", "note": "(Snowflake-managed Iceberg)", "color": "gold", "badge": {"icon": "snowflake:Snowflake_ICON_Iceberg_Tables", "label": "Apache Iceberg", "size": 22}}],
+       "footnote": {"id": "m_ev", "icon": "aws:Simple-Storage-Service", "label": "External Volume:\nCustomer S3"}},
+      {"id": "s5", "num": 5, "title": "Machine Learning & AI", "type": "tiles", "cols": 6,
+       "narrative": "Data scientists train on Silver/Gold in **Snowflake ML** (Notebooks, Feature Store, Model Registry, batch / SPCS inference) and use Cortex AI for LLM use cases. Teams that prefer **Amazon SageMaker** read the same Iceberg tables through the Horizon Iceberg REST endpoint (PyIceberg / Spark) — no copies or exports — and can write scores back to an Iceberg table that Snowflake reads immediately.",
+       "components": [["Snowflake Notebooks", "Python/SQL on warehouse or container runtime."], ["Feature Store", "Reusable, point-in-time-correct features."], ["Model Registry", "Versioned, governed models; batch or real-time inference."], ["Cortex AI", "LLM functions, Cortex Search, Analyst and Agents."], ["Amazon SageMaker", "Trains on the same Iceberg data via Horizon IRC."]],
+       "items": [
+        {"icon": "snowflake:Snowflake_ICON_Code", "label": "Snowflake\nNotebooks"},
+        {"icon": "snowflake:Snowflake_ICON_Sno_Database", "label": "Feature\nStore"},
+        {"icon": "snowflake:Snowflake_ICON_Data_Sheet", "label": "Model\nRegistry"},
+        {"icon": "snowflake:Processes", "label": "Inference\n(WH / SPCS)"},
+        {"icon": "snowflake:Cortex", "label": "Snowflake\nCortex AI"},
+        {"id": "i_sm", "icon": "aws:SageMaker", "label": "Amazon\nSageMaker", "sub": "(via Horizon IRC)"}]}
+     ],
+     "band": {"id": "gov", "title": "SNOWFLAKE HORIZON - GOVERNANCE & ICEBERG REST CATALOG", "icon": "snowflake:Security",
+       "narrative": "Horizon is both the governance layer and the open catalog. It exposes the **Horizon Iceberg REST Catalog API** (`https://<org>-<account>.snowflakecomputing.com/polaris/api/catalog`), so external engines authenticate with Snowflake users and roles (PAT, key-pair, OAuth or WIF). **RBAC** grants decide which schemas/tables each engine role sees, and **masking and row access policies** are enforced for external engines through the **Scan Plan API** (server-side planning). Access History records every external read (`event_source = 'horizon_irc'`).",
+       "components": [["Horizon Iceberg REST Catalog", "One open endpoint for Spark, Databricks, Trino, PyIceberg, Glue federation."], ["RBAC (roles & grants)", "Engine-specific read-only roles; vended S3 credentials scoped per table."], ["Masking & Row Access Policies", "Enforced in Snowflake and, via the Scan Plan API, in external engines."], ["Tags & Classification", "Sensitive-data discovery drives tag-based masking."], ["Access History & Lineage", "Audit of external engine reads (event_source = horizon_irc)."], ["Credential Vending", "Engines never hold long-lived S3 keys."]],
+       "items": [
+        {"icon": "snowflake:Metadata", "label": "Iceberg REST\nCatalog (IRC)"},
+        {"icon": "snowflake:Users", "label": "RBAC Roles\n& Grants"},
+        {"icon": "snowflake:RA_Policy_Masking", "label": "Masking & Row\nAccess Policies"},
+        {"icon": "snowflake:Tag", "label": "Tags &\nClassification"},
+        {"icon": "snowflake:Time", "label": "Access History\n& Lineage"},
+        {"icon": "snowflake:Secure_Data", "label": "Credential\nVending"}]}
+    },
+    {"panels": [
+      {"id": "p6", "num": 6, "title": "Group Engines (IRC)", "cols": 3, "flex": 1.2,
+       "narrative": "Sister companies connect their own engines **directly to the Horizon Iceberg REST endpoint** — no Snowflake Open Catalog in the middle and no data copies. **Databricks on AWS** (classic cluster with the Apache Iceberg Spark runtime), Apache Spark / Amazon EMR, Trino and PyIceberg / DuckDB each use a read-only Snowflake service user whose role only sees Silver and Gold. Group companies that run Snowflake can also mount the tables through a catalog integration or use Secure Data Sharing.",
+       "components": [["Databricks on AWS", "Spark catalog of type rest pointing at Horizon IRC (dedicated/classic cluster)."], ["Apache Spark / Amazon EMR", "Iceberg Spark runtime 1.11+ for Scan Plan policy enforcement."], ["Trino", "Iceberg connector with a REST catalog and vended credentials."], ["PyIceberg / DuckDB", "Lightweight Python access for notebooks and SageMaker."], ["Snowflake (group accounts)", "Catalog integration to Horizon IRC or Secure Data Sharing."]],
+       "tiles": [
+        {"icon": "logo:databricks", "label": "Databricks\non AWS"},
+        {"icon": "logo:apachespark", "label": "Spark /\nAmazon EMR"},
+        {"icon": "logo:trino", "label": "Trino"},
+        {"icon": "snowflake:Snowflake_ICON_Code", "label": "PyIceberg /\nDuckDB"},
+        {"icon": "aws:SageMaker", "label": "Amazon\nSageMaker"},
+        {"icon": "logo:snowflake", "label": "Group\nSnowflake"}]},
+      {"id": "p7", "num": 7, "title": "AWS via Glue", "cols": 3,
+       "narrative": "For the AWS-native subsidiary, **AWS Glue Data Catalog catalog federation** mounts the Snowflake database as a federated catalog (connection type `SNOWFLAKEICEBERGRESTCATALOG`, OAuth2 with a Snowflake PAT, source-vended credentials). **AWS Lake Formation** grants the AWS principals access, and **Amazon Athena** queries Silver/Gold as `\"catalog\".\"schema\".\"table\"`. Amazon Redshift support for the federated catalog should be verified for the customer's region before committing.",
+       "components": [["AWS Glue Data Catalog (federated)", "Mounts the Snowflake database through Horizon IRC."], ["AWS Lake Formation", "Grants AWS principals DESCRIBE/SELECT on federated objects."], ["Amazon Athena", "Serverless SQL over the federated Iceberg tables."], ["Amazon Redshift", "Query via Glue/Lake Formation — verify regional support."]],
+       "tiles": [
+        {"icon": "aws:Glue", "label": "Glue Data\nCatalog"},
+        {"icon": "aws:Lake-Formation", "label": "Lake\nFormation"},
+        {"icon": "aws:Athena", "label": "Amazon\nAthena"},
+        {"icon": "aws:Redshift", "label": "Amazon\nRedshift", "sub": "(verify)"},
+        {"icon": "aws:Analytics/QuickSight", "label": "Amazon\nQuickSight"},
+        {"icon": "snowflake:Streamlit_in_Snowflake", "label": "Streamlit /\nSnowsight"}]}
+    ]}
+  ],
+  "connections": [
+    {"from": "p1", "to": "g_batch", "type": "batch", "anchor": "to"},
+    {"from": "p1", "to": "g_stream", "type": "stream", "anchor": "to"},
+    {"from": "p2", "to": "s3", "type": "batch", "anchor": "to"},
+    {"from": "p2", "to": "s4", "type": "stream", "anchor": "to"},
+    {"from": "platform", "to": "p6", "type": "share", "anchor": "to"},
+    {"from": "platform", "to": "p7", "type": "share", "anchor": "to"}
+  ],
+  "workflow": {
+    "overview": "This reference architecture shows a conglomerate subsidiary that runs its end-to-end data platform on Snowflake on AWS and publishes its Silver and Gold data to sister companies that use Databricks, Athena/Redshift and other engines. Every medallion layer is a Snowflake-managed Apache Iceberg table: Snowflake (Horizon Catalog) is the catalog and the files sit in the subsidiary's own Amazon S3 bucket. External engines connect directly to the Horizon Iceberg REST Catalog endpoint — Snowflake Open Catalog is no longer required — and Horizon RBAC plus masking / row access policies (through the Scan Plan API) remain the single point of governance. Blue arrows are batch flows, orange arrows are streaming flows and purple arrows are open Iceberg REST access.",
+    "flows": [
+      {"name": "Flow A — Batch medallion pipeline", "highlight": ["c_db", "c_saas", "c_files", "g_batch", "s3", "s4"], "connections": [0, 2],
+       "summary": "Source data becomes Silver/Gold Iceberg tables in the customer's S3, orchestrated by MWAA and modelled by dbt Projects on Snowflake.",
+       "steps": ["Extracts land in the S3 landing zone; an MWAA DAG triggers COPY INTO / Snowpipe into Bronze Iceberg tables.", "The same DAG runs EXECUTE DBT PROJECT; dbt models cleanse Bronze into Silver and build Gold marts.", "Snowflake commits each write as Iceberg snapshots (Parquet + metadata) in the customer's S3 bucket and maintains the tables.", "dbt tests and Data Metric Functions validate quality before the data is published."]},
+      {"name": "Flow B — Group engines read through Horizon IRC", "highlight": ["t_silver", "t_gold", "gov", "p6"], "connections": [4],
+       "summary": "Databricks, Spark, Trino and PyIceberg read the same tables with Snowflake roles and policies applied.",
+       "steps": ["A read-only Snowflake service user + role is created per consuming company and granted SELECT on Silver/Gold only.", "The engine authenticates to https://<org>-<account>.snowflakecomputing.com/polaris/api/catalog with a PAT (or key-pair / OAuth / WIF) and scope session:role:<ROLE>.", "Horizon checks RBAC, evaluates masking / row access policies (Scan Plan API) and vends short-lived, table-scoped S3 credentials.", "The engine reads the Parquet files directly from S3; Access History logs the access with event_source = 'horizon_irc'."]},
+      {"name": "Flow C — AWS analytics via Glue catalog federation", "highlight": ["t_gold", "gov", "p7"], "connections": [5],
+       "summary": "Athena users query Gold through a Glue federated catalog without any copy or registration job.",
+       "steps": ["A Snowflake PAT for a read-only role is stored in AWS Secrets Manager.", "An AWS Glue connection of type SNOWFLAKEICEBERGRESTCATALOG is registered with Lake Formation and a federated catalog is created for the Snowflake database.", "Lake Formation grants DESCRIBE/SELECT on the federated databases and tables to AWS principals.", "Athena (and QuickSight on Athena) query \"catalog\".\"schema\".\"table\"; new Snowflake tables appear automatically."]},
+      {"name": "Flow D — Machine learning on both platforms", "highlight": ["t_silver", "t_gold", "s5", "i_sm"], "connections": [],
+       "summary": "Snowflake ML and Amazon SageMaker train on the same governed Iceberg data.",
+       "steps": ["Snowflake ML builds features in the Feature Store and logs models to the Model Registry for batch or SPCS inference.", "SageMaker notebooks read Silver/Gold with PyIceberg through Horizon IRC using a dedicated ML role.", "Optional: SageMaker writes predictions to a dedicated Iceberg table through Horizon IRC (write role).", "Snowflake consumers and BI tools see the predictions immediately; no export pipelines to maintain."]}
+    ],
+    "benefits": ["One copy of data in the customer's own S3, readable by every group engine — no duplication or sync jobs.", "No Snowflake Open Catalog to operate: Horizon exposes the Iceberg REST API in every account.", "Governance defined once in Snowflake (RBAC, masking, row access) and enforced for external engines through the Scan Plan API, with a single audit trail.", "Snowflake manages Iceberg maintenance (compaction, snapshot expiry) while engines keep their own compute and billing."]
+  }
+}

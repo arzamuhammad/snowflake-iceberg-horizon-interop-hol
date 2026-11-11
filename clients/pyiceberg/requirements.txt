@@ -1,0 +1,1 @@
+pyiceberg[pyarrow,pandas]>=0.12

@@ -1,0 +1,15 @@
+# Lab 6c - Trino on your laptop against Horizon IRC
+#   export SNOWFLAKE_ACCOUNT=<org>-<account> SNOWFLAKE_PAT=<PAT> AWS_REGION=ap-southeast-3
+#   docker compose up -d
+#   docker exec -it trino-horizon trino --catalog horizon
+services:
+  trino:
+    image: trinodb/trino:latest
+    container_name: trino-horizon
+    ports: ["8080:8080"]
+    environment:
+      SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT}
+      SNOWFLAKE_PAT: ${SNOWFLAKE_PAT}
+      AWS_REGION: ${AWS_REGION:-ap-southeast-3}
+    volumes:
+      - ./etc/catalog/horizon.properties:/etc/trino/catalog/horizon.properties:ro
